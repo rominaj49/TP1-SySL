@@ -2,22 +2,23 @@
 #include <string.h>
 
 //-------------------- DEFINICIONES DEL AUTÓMATA --------------------
-typedef enum { Q0, Q1, Q2, Q3, Q4, Q5, Q6 } t_estado;
+typedef enum { Q0, Q1, Q2, Q3, Q4, Q5, Q6, Q7} t_estado;
 
-#define CANT_ESTADOS 7
-#define LONG_ALFABETO 24
+#define CANT_ESTADOS 8
+#define LONG_ALFABETO 26
 #define CANT_FINALES 4
 #define EST_INICIAL Q0
 #define CENTINELA '#'
 
 int tabla_estados[CANT_ESTADOS][LONG_ALFABETO] = {
-    {Q1,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6},
-    {Q5,Q5,Q5,Q5,Q5,Q5,Q5,Q5,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q3,Q3},
-    {Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6},
-    {Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q6,Q6},
-    {Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q6,Q6},
-    {Q5,Q5,Q5,Q5,Q5,Q5,Q5,Q5,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6},
-    {Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6,Q6}
+    {Q1,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q6,Q6},
+    {Q5,Q5,Q5,Q5,Q5,Q5,Q5,Q5,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q3,Q3,Q7,Q7},
+    {Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7},
+    {Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q7,Q7,Q7,Q7},
+    {Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q4,Q7,Q7,Q7,Q7},
+    {Q5,Q5,Q5,Q5,Q5,Q5,Q5,Q5,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7},
+    {Q7,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q2,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7},
+    {Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7,Q7}
 };
 
 int estados_finales[CANT_FINALES] = {Q1,Q2,Q4,Q5};
@@ -26,7 +27,7 @@ char alfabeto[] = {
     '0','1','2','3','4','5','6','7','8','9',
     'A','B','C','D','E','F',
     'a','b','c','d','e','f',
-    'x','X'
+    'x','X','+','-'
 };
 
 // Contadores globales
@@ -160,29 +161,37 @@ int evaluarOperacion(const char *expr){
     return result;
 }
 
-//-------------------- FUNCION MAIN --------------------
-int main(){
-    char cadena[256];
-    char operacion[256];
+//---------------- FUNCIONES AUXILIARES ----------------
 
-    printf("Ingrese la cadena de numeros (# para separar): ");
-    fgets(cadena,256,stdin);
-    cadena[strcspn(cadena,"\n")] = '\0';
+void pedirDatos(FILE* archilec, char cadena[], char operacion[], int dimVects) {
+    if (!archilec) { // si no se detecta archivo para leer los datos, se pide por CLI
+        printf("No se detecto ningun archivo \"entrada.txt\"\n");
 
-    printf("Ingrese la operacion decimal: ");
-    fgets(operacion,256,stdin);
-    operacion[strcspn(operacion,"\n")] = '\0';
+        printf("Ingrese la cadena de numeros (# para separar): ");
+        fgets(cadena, dimVects, stdin);
+        cadena[strcspn(cadena,"\n")] = '\0';
+        
+        printf("Ingrese la operacion decimal: ");
+        fgets(operacion, dimVects, stdin);
+        operacion[strcspn(operacion,"\n")] = '\0';
 
-    FILE *salida = fopen("salida.txt","w");
-    if(salida == NULL){
-        printf("Error al crear archivo salida.txt\n");
-        return 1;
+        return;
     }
 
-    // Validar la cadena con el autómata (Ejercicio 1)
-    automata(cadena, salida);
+    printf("Se detecto el archivo \"entrada.txt\"\n");
+    
+    printf("Leyendo datos...\n");
 
-    // Resumen
+    fgets(cadena, dimVects, archilec); // para la cadena
+    cadena[strcspn(cadena, "\n")] = '\0';
+
+    fgets(operacion, dimVects, archilec); // para la operacion
+    operacion[strcspn(operacion, "\n")] = '\0';
+    
+    printf("Datos leidos correctamente\n");
+}
+
+void resumen(FILE* salida, char operacion[]) {
     fprintf(salida,"\nResumen:\n");
     fprintf(salida,"Decimales: %d\n", cantDecimal);
     fprintf(salida,"Octales: %d\n", cantOctal);
@@ -195,7 +204,32 @@ int main(){
     // Evaluar operación decimal (Ejercicio 3)
     int resultado = evaluarOperacion(operacion);
     printf("Resultado de la operacion: %d\n", resultado);
-    fprintf(salida,"Resultado de la operacion: %d\n", resultado);
+    fprintf(salida,"Resultado de la operacion: %d\n", resultado);    
+}
+
+//-------------------- FUNCION MAIN --------------------
+int main(){
+    const int tamBuffer = 256;
+    char cadena[tamBuffer];
+    char operacion[tamBuffer];
+
+    FILE *archilec = fopen("entrada.txt", "r");
+    
+    pedirDatos(archilec, cadena, operacion, tamBuffer);
+
+    fclose(archilec);
+
+    FILE *salida = fopen("salida.txt","w");
+    if(salida == NULL){
+        printf("Error al crear archivo salida.txt\n");
+        return 1;
+    }
+
+    // Validar la cadena con el autómata (Ejercicio 1)
+    automata(cadena, salida);
+
+    // Resumen
+    resumen(salida, operacion);
 
     fclose(salida);
     printf("\nArchivo 'salida.txt' creado con exito.\n");
