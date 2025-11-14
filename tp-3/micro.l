@@ -1,31 +1,16 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include "micro.tab.h"
 
 int yylineno = 1;
 #define MAX_ID_LEN 32
 
-enum {
-    T_INICIO = 256,
-    T_FIN,
-    T_LEER,
-    T_ESCRIBIR,
-    T_IDENTIFICADOR,
-    T_CONSTANTE,
-    T_MAS,
-    T_MENOS,
-    T_ASIGNACION,
-    T_APARENTESIS,
-    T_CPARENTESIS,
-    T_COMA,
-    T_PUNTOYCOMA
-};
-
 int yywrap(void) { return 1; }
-
 %}
 
-/* Expresiones regulares */
+/* Macros */
 letra      [A-Za-z]
 digito     [0-9]
 id         {letra}({letra}|{digito})*
@@ -33,34 +18,34 @@ constante  {digito}+
 
 %%
 
-"inicio"      { printf("INICIO\n"); return T_INICIO; }
-"fin"         { printf("FIN\n"); return T_FIN; }
-"leer"        { printf("LEER\n"); return T_LEER; }
-"escribir"    { printf("ESCRIBIR\n"); return T_ESCRIBIR; }
+"inicio"      { return INICIO; }
+"fin"         { return FIN; }
+"leer"        { return LEER; }
+"escribir"    { return ESCRIBIR; }
 
-"+"           { printf("MAS\n"); return T_MAS; }
-"-"           { printf("MENOS\n"); return T_MENOS; }
+"+"           { return MAS; }
+"-"           { return MENOS; }
 
-"("           { printf("APARENTESIS\n"); return T_APARENTESIS; }
-")"           { printf("CPARENTESIS\n"); return T_CPARENTESIS; }
-","           { printf("COMA\n"); return T_COMA; }
-";"           { printf("PUNTOYCOMA\n"); return T_PUNTOYCOMA; }
+"("           { return APARENTESIS; }
+")"           { return CPARENTESIS; }
+","           { return COMA; }
+";"           { return PUNTOYCOMA; }
 
-":="          { printf("ASIGNACION\n"); return T_ASIGNACION; }
+":="          { return ASIGNACION; }
 
 {constante}   {
-                  printf("CONSTANTE(%s)\n", yytext);
-                  return T_CONSTANTE;
+                  yylval.ival = atoi(yytext);
+                  return CONSTANTE;
               }
 
 {id}          {
                   if (strlen(yytext) > MAX_ID_LEN) {
                       fprintf(stderr,
-                              "Error semántico en línea %d: identificador '%s' excede los 32 caracteres.\n",
+                              "Error semantico en linea %d: identificador '%s' excede los 32 caracteres.\n",
                               yylineno, yytext);
                   }
-                  printf("IDENTIFICADOR(%s)\n", yytext);
-                  return T_IDENTIFICADOR;
+                  yylval.sval = strdup(yytext);
+                  return IDENTIFICADOR;
               }
 
 [ \t\r]+      { /* ignorar espacios y tabs */ }
@@ -69,15 +54,8 @@ constante  {digito}+
 
 .             {
                   fprintf(stderr,
-                          "Error léxico en línea %d: carácter inválido '%s'\n",
+                          "Error lexico en linea %d: caracter invalido '%s'\n",
                           yylineno, yytext);
               }
 
 %%
-
-int main(void) {
-    int t;
-    while ((t = yylex()) != 0) {
-            }
-    return 0;
-}

@@ -1,0 +1,5 @@
+inicio
+    a := 5;
+    cc := a + hola;
+    escribir(cc);
+fin
