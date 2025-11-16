@@ -1,61 +1,52 @@
 %{
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include "micro.tab.h"
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include "micro.tab.h"
 
-int yylineno = 1;
-#define MAX_ID_LEN 32
-
-int yywrap(void) { return 1; }
+    int yylineno = 1;
 %}
 
-/* Macros */
-letra      [A-Za-z]
-digito     [0-9]
-id         {letra}({letra}|{digito})*
-constante  {digito}+
+DIGITO          [0-9]
+LETRA           [a-zA-Z]
+IDENTIFICADOR   {LETRA}({LETRA}|{DIGITO})*
+CONSTENTERA     {DIGITO}+
 
 %%
 
-"inicio"      { return INICIO; }
-"fin"         { return FIN; }
-"leer"        { return LEER; }
-"escribir"    { return ESCRIBIR; }
+"inicio"        { return INICIO; }
+"fin"           { return FIN; }
+"leer"          { return LEER; }
+"escribir"      { return ESCRIBIR; }
 
-"+"           { return MAS; }
-"-"           { return MENOS; }
+":="            { return ASIGNACION; }
 
-"("           { return APARENTESIS; }
-")"           { return CPARENTESIS; }
-","           { return COMA; }
-";"           { return PUNTOYCOMA; }
+"+"             { return SUMA; }
+"-"             { return RESTA; }
 
-":="          { return ASIGNACION; }
+","             { return COMA; }
+";"             { return PYCOMA; }
+"("             { return PARENIZQUIERDO; }
+")"             { return PARENDERECHO; }
 
-{constante}   {
-                  yylval.ival = atoi(yytext);
-                  return CONSTANTE;
-              }
+{CONSTENTERA}   {
+                    yylval.num = atoi(yytext);
+                    return CONSTANTE;
+                }
 
-{id}          {
-                  if (strlen(yytext) > MAX_ID_LEN) {
-                      fprintf(stderr,
-                              "Error semantico en linea %d: identificador '%s' excede los 32 caracteres.\n",
-                              yylineno, yytext);
-                  }
-                  yylval.sval = strdup(yytext);
-                  return IDENTIFICADOR;
-              }
+{IDENTIFICADOR} {
+                    yylval.cadena = strdup(yytext);
+                    return ID;
+                }
 
-[ \t\r]+      { /* ignorar espacios y tabs */ }
+[ \t\r]+        { }
 
-\n            { yylineno++; }
+\n              { yylineno++; }
 
-.             {
-                  fprintf(stderr,
-                          "Error lexico en linea %d: caracter invalido '%s'\n",
-                          yylineno, yytext);
-              }
+.               {
+                    fprintf(stderr,
+                        "Error lexico en linea %d: caracter invalido '%s'\n",
+                        yylineno, yytext);
+                }
 
 %%

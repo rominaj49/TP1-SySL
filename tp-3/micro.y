@@ -1,16 +1,19 @@
 %{
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> 
+#include <math.h>
 #include <string.h>
 
+extern char *yytext;
+extern int yyleng;
+extern int yylex(void);
+void yyerror(char*);
 extern int yylineno;
-int yylex(void);
-void yyerror(const char *s);
 
-/* --- Tabla de símbolos --- */
+/* Tabla de símbolos */
 typedef struct Simbolo {
     char *nombre;
-    int inicializada;      
+    int inicializada;          
     struct Simbolo *sig;
 } Simbolo;
 
@@ -23,25 +26,21 @@ void asignar_variable(char *nombre);
 void leer_variable(char *nombre);
 %}
 
-/* Valores semánticos */
-%union {
-    int    ival;    /* para CONSTANTES */
-    char*  sval;    /* para IDENTIFICADORES */
-}
+%union{
+   char* cadena;
+   int num;
+} 
 
-/* Tokens */
+/* Tokens léxicos */
+%token ASIGNACION PYCOMA SUMA RESTA PARENIZQUIERDO PARENDERECHO COMA
 %token INICIO FIN LEER ESCRIBIR
-%token <sval> IDENTIFICADOR
-%token <ival> CONSTANTE
-%token MAS MENOS
-%token ASIGNACION
-%token APARENTESIS CPARENTESIS COMA PUNTOYCOMA
-
-/* Precedencia */
-%left MAS MENOS
+%token <cadena> ID
+%token <num> CONSTANTE
 
 /* Tipos de no terminales */
-%type <ival> expresion termino
+%type <num> expresion primaria
+
+%left SUMA RESTA
 
 %%
 
@@ -52,62 +51,72 @@ programa
       }
     ;
 
+/* Secuencia de sentencias */
 sentencias
     : /* vacio */
     | sentencias sentencia
     ;
 
+/* Tipos de sentencia */
 sentencia
     : asignacion
-    | entrada
-    | salida
+    | lectura
+    | escritura
     ;
 
+/* ID := expresion ; */
 asignacion
-    : IDENTIFICADOR ASIGNACION expresion PUNTOYCOMA
+    : ID ASIGNACION expresion PYCOMA
       {
-        asignar_variable($1);   /* rutina semantica: marca como inicializada */
+        asignar_variable($1);
         free($1);
       }
     ;
 
-entrada
-    : LEER APARENTESIS lista_ids CPARENTESIS PUNTOYCOMA
+/* leer(a,b,c); */
+lectura
+    : LEER PARENIZQUIERDO lista_ids PARENDERECHO PYCOMA
     ;
 
-salida
-    : ESCRIBIR APARENTESIS lista_exp CPARENTESIS PUNTOYCOMA
+/* escribir(expr1, expr2, ...); */
+escritura
+    : ESCRIBIR PARENIZQUIERDO lista_exp PARENDERECHO PYCOMA
     ;
 
+/* lista de IDs: a | a,b | a,b,c,... */
 lista_ids
-    : IDENTIFICADOR
+    : ID
       {
-        leer_variable($1);      /* rutina semantica: leer = inicializar */
+        leer_variable($1);  
         free($1);
       }
-    | lista_ids COMA IDENTIFICADOR
+    | lista_ids COMA ID
       {
         leer_variable($3);
         free($3);
       }
     ;
 
+/* lista de expresiones: expr | expr, expr | expr, expr, ... */
 lista_exp
     : expresion
     | lista_exp COMA expresion
     ;
 
-/* Expresiones aritmeticas enteras */
+/* expr + expr | expr - expr | primaria */
 expresion
-    : termino
-    | expresion MAS termino
-    | expresion MENOS termino
+    : primaria
+    | expresion SUMA primaria
+      { $$ = $1 + $3; }
+    | expresion RESTA primaria
+      { $$ = $1 - $3; }
     ;
 
-termino
-    : IDENTIFICADOR
+/* primaria: ID | CONSTANTE | (expr) */
+primaria
+    : ID
       {
-        usar_variable($1);   /* rutina semantica: usar = debe estar inicializada */
+        usar_variable($1);  
         $$ = 0;              
         free($1);
       }
@@ -115,7 +124,7 @@ termino
       {
         $$ = $1;
       }
-    | APARENTESIS expresion CPARENTESIS
+    | PARENIZQUIERDO expresion PARENDERECHO
       {
         $$ = $2;
       }
@@ -123,11 +132,17 @@ termino
 
 %%
 
-void yyerror(const char *s) {
-    fprintf(stderr, "Error sintactico en linea %d: %s\n", yylineno, s);
+int main(void) {
+    return yyparse();
 }
 
-/* --- Implementacion de tabla de simbolos y rutinas semanticas --- */
+void yyerror (char *s){
+    fprintf(stderr,
+        "Error sintactico en linea %d: %s cerca de '%s'\n",
+        yylineno, s, yytext);
+}
+
+/* --- Implementación tabla de símbolos y rutinas semánticas --- */
 
 Simbolo* buscar(char *nombre) {
     Simbolo *act = tabla;
@@ -150,7 +165,7 @@ Simbolo* insertar(char *nombre, int inicializada) {
 
 /* usar_variable:
    - si no existe, la crea como no inicializada y tira error
-   - si existe pero no inicializada, tira error
+   - si existe pero no esta inicializada, tira error
 */
 void usar_variable(char *nombre) {
     Simbolo *s = buscar(nombre);
@@ -166,7 +181,7 @@ void usar_variable(char *nombre) {
     }
 }
 
-/* asignar_variable: IDENTIFICADOR := expr; */
+/* asignar_variable: ID := expr; */
 void asignar_variable(char *nombre) {
     Simbolo *s = buscar(nombre);
     if (!s)
@@ -184,6 +199,6 @@ void leer_variable(char *nombre) {
         s->inicializada = 1;
 }
 
-int main(void) {
-    return yyparse();
+int yywrap()  {
+  return 1;  
 }

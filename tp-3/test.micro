@@ -1,5 +1,5 @@
 inicio
-    a := 5;
-    cc := a + hola;
-    escribir(cc);
+    leer(a,b);
+    cc := a + (b-2);
+    escribir(cc, a+4);
 fin
