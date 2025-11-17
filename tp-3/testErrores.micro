@@ -1,0 +1,7 @@
+inicio
+    b := z + 1;
+    leer(c,d);
+    escribir(e);
+    a := 12.3;
+fin 
+.
